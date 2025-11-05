@@ -294,7 +294,7 @@ function Seguridad() {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: "http://localhost:5173/reset-password",
+      redirectTo: "https://app-prueba-wokrexpress.netlify.app/reset-password",
     });
 
     if (error) {
