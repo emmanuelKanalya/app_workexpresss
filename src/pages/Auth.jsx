@@ -125,7 +125,7 @@ export default function Auth() {
       email: form.correo_principal,
       password: form.password,
       options: {
-        emailRedirectTo: "https://app-prueba-wokrexpress.netlify.app//confirmacion-correo",
+        emailRedirectTo: "https://app-prueba-wokrexpress.netlify.app/confirmacion-correo",
       },
     });
 
@@ -232,7 +232,7 @@ export default function Auth() {
     }
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(form.correo_principal, {
-      redirectTo: "https://app-prueba-wokrexpress.netlify.app//reset-password",
+      redirectTo: "https://app-prueba-wokrexpress.netlify.app/reset-password",
     });
     setLoading(false);
 
