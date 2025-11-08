@@ -4,12 +4,16 @@ import BottomNav from "../component/BottomNav";
 import { TrackingSearch } from "../component/TrackingSearch";
 import { TrackingResult } from "../component/TrackingResult";
 import { consultarTracking } from "../lib/tranking";
-import { X, Package, User, CheckCircle2 } from "lucide-react";
+import { X, Package, User, CheckCircle2, Moon, Sun } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
-import Popup from "../component/Popup"
+import Popup from "../component/Popup";
+import { useTheme } from "../component/ThemeProvider"; // 👈 agregado
+
 export default function Seguimiento() {
   const { user, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme(); // 👈 controla el tema global
+
   const [userName, setUserName] = useState("");
   const [clienteInfo, setClienteInfo] = useState({
     plan: "",
@@ -27,15 +31,15 @@ export default function Seguimiento() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [allowOpen, setAllowOpen] = useState(false); // 👈 para volver a abrir manualmente
+  const [allowOpen, setAllowOpen] = useState(false);
   const [closing, setClosing] = useState(false);
-  // 🔹 Obtener el nombre del cliente autenticado
+
+  // 🔹 Obtener datos del cliente
   useEffect(() => {
     const getUserData = async () => {
       if (!user?.email) return;
 
       try {
-        // 1️⃣ Buscar datos del cliente
         const { data: cliente, error: errorCliente } = await supabase
           .from("tb_cliente")
           .select("nombre, apellido, id_plan, id_sucursal")
@@ -45,25 +49,18 @@ export default function Seguimiento() {
         if (errorCliente) throw errorCliente;
         if (!cliente) return;
 
-        // 2️⃣ Buscar el plan
-        const { data: plan, error: errorPlan } = await supabase
+        const { data: plan } = await supabase
           .from("tb_plan")
           .select("descripcion, precio, beneficios")
           .eq("id_plan", cliente.id_plan)
           .maybeSingle();
 
-        if (errorPlan) throw errorPlan;
-
-        // 3️⃣ Buscar la sucursal
-        const { data: sucursal, error: errorSucursal } = await supabase
+        const { data: sucursal } = await supabase
           .from("tb_sucursal")
           .select("nombre, direccion, telefono")
           .eq("id_sucursal", cliente.id_sucursal)
           .maybeSingle();
 
-        if (errorSucursal) throw errorSucursal;
-
-        // 4️⃣ Guardar todo en el estado
         setUserName(`${cliente.nombre} ${cliente.apellido}`);
         setClienteInfo({
           plan: plan?.descripcion || "—",
@@ -80,14 +77,9 @@ export default function Seguimiento() {
     getUserData();
   }, [user]);
 
+  // 🔹 Manejo de modal
   useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = "hidden"; // bloquea scroll del fondo
-    } else {
-      document.body.style.overflow = "auto"; // lo reactiva al cerrar
-    }
-
-    // limpia si el componente se desmonta
+    document.body.style.overflow = showModal ? "hidden" : "auto";
     return () => {
       document.body.style.overflow = "auto";
     };
@@ -103,10 +95,8 @@ export default function Seguimiento() {
 
     try {
       const result = await consultarTracking(trackingId);
-
       if (!result.error && result.data) {
         setTrackingData(result.data);
-        // espera 3 segundos después de mostrar el estado antes de abrir el modal
         setTimeout(() => {
           setShowModal(true);
           setAllowOpen(true);
@@ -114,9 +104,7 @@ export default function Seguimiento() {
       } else {
         setError({
           type: "not_found",
-          message:
-            result.message ||
-            "No se encontró información para este número de rastreo.",
+          message: result.message || "No se encontró información para este número de rastreo.",
         });
       }
     } catch {
@@ -129,8 +117,7 @@ export default function Seguimiento() {
     }
   };
 
-  //Confirmar agregar paquete
-  // ✅ Confirmar agregar paquete a la cuenta del cliente
+  // ✅ Confirmar agregar paquete a cuenta
   const handleConfirmAdd = async () => {
     try {
       if (!trackingData?.tracking_id) {
@@ -138,29 +125,23 @@ export default function Seguimiento() {
         return;
       }
 
-
-      // 1️⃣ Buscar el id_cliente del usuario actual
-      const { data: cliente, error: errorCliente } = await supabase
+      const { data: cliente } = await supabase
         .from("tb_cliente")
         .select("id_cliente, nombre, apellido, email")
         .eq("email", user.email)
         .maybeSingle();
 
-      if (errorCliente) throw errorCliente;
       if (!cliente) {
         setPopup({ show: true, message: "No se encontró tu cuenta de cliente.", type: "error" });
         return;
       }
 
-
-      // 2️⃣ Verificar si el paquete existe antes de actualizar
-      const { data: paqueteExistente, error: errorBuscar } = await supabase
+      const { data: paqueteExistente } = await supabase
         .from("tb_paquetes")
         .select("id_paquetes, id_cliente, tracking_id")
         .eq("tracking_id", String(trackingData.tracking_id).trim())
         .maybeSingle();
 
-      if (errorBuscar) throw errorBuscar;
       if (!paqueteExistente) {
         setPopup({ show: true, message: "Este paquete no existe en la base de datos.", type: "error" });
         return;
@@ -171,8 +152,6 @@ export default function Seguimiento() {
         return;
       }
 
-
-      // 3️⃣ Actualizar el paquete con los datos del cliente
       const { data, error } = await supabase
         .from("tb_paquetes")
         .update({
@@ -184,12 +163,10 @@ export default function Seguimiento() {
         .eq("tracking_id", String(trackingData.tracking_id).trim())
         .select();
 
-      if (error) throw error;
-
-      if (data.length === 0) {
+      if (error || data.length === 0) {
         setPopup({ show: true, message: "No se actualizó el paquete. Verifica los datos.", type: "error" });
       } else {
-        setPopup({ show: true, message: "✅ Paquete vinculado correctamente a tu cuenta.", type: "success" });
+        setPopup({ show: true, message: "Paquete vinculado correctamente a tu cuenta.", type: "success" });
         setShowModal(false);
       }
     } catch (err) {
@@ -198,99 +175,88 @@ export default function Seguimiento() {
     }
   };
 
-
-  // al cerrar
   const handleClose = () => {
     setClosing(true);
     setTimeout(() => {
       setShowModal(false);
       setClosing(false);
-    }, 400); // coincide con la duración de la animación
+    }, 400);
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Barra lateral en desktop */}
+    <div className="flex min-h-screen bg-gray-50 dark:bg-[#0f172a] text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      {/* Sidebar */}
       <Sidebar />
 
       {/* Contenido principal */}
       <main className="flex-1 ml-0 md:ml-20 pb-20 md:pb-0 p-6 flex flex-col items-center">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">
-          Seguimiento de Paquetes
-        </h1>
+        {/* 🔹 Encabezado con botón de tema */}
+        <div className="w-full flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-[#f2af1e]">
+            Seguimiento de Paquetes
+          </h1>
+
+        </div>
 
         {/* 🔍 Barra de búsqueda */}
         <TrackingSearch onSearch={handleSearch} isLoading={isLoading} />
 
         {/* 📦 Resultado */}
         <div className="w-full max-w-3xl mt-6 space-y-4">
-          {/* 👇 Botón para abrir manualmente el modal si ya fue mostrado una vez */}
           {allowOpen && trackingData && (
             <div className="flex justify-end mt-3">
+              
               <button
                 onClick={() => setShowModal(true)}
-                className="flex items-center justify-center bg-[#b71f4b] hover:bg-[#a01744] text-white w-12 h-10 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
+                className="w-10 flex items-center justify-center bg-[#b71f4b] hover:bg-[#a01744] dark:bg-[#f2af1e] dark:hover:bg-[#e6c565] text-white  h-10 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 text-[12px]"
                 title="Agregar paquete"
               >
-                {/* signo + */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  className="w-5 h-5 text-white"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
                 </svg>
               </button>
             </div>
           )}
 
-
-
           <TrackingResult data={trackingData} error={error} />
-
         </div>
       </main>
 
-      {/* Barra inferior para móviles */}
+      {/* Bottom Nav */}
       <BottomNav />
 
-      {/* 🔔 Modal tipo "sheet" desde abajo */}
+      {/* Modal agregar paquete */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-end md:items-center px-4">
           <div
-            className="bg-white w-full max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl transform transition-all duration-300 translate-y-0 animate-slide-up"
-            style={{ animation: `${closing ? "slideDown" : "slideUp"} 0.4s ease-out`, }}
+            className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 w-full max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl transform transition-all duration-300"
+            style={{ animation: `${closing ? "slideDown" : "slideUp"} 0.4s ease-out` }}
           >
-            <div className="flex justify-between items-center p-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-800">Agregar Paquete</h2>
-              <button
-                onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600"
-              >
+            <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-[#f2af1e]">
+                Agregar Paquete
+              </h2>
+              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
-              <p className="text-gray-700 text-sm">
+              <p className="text-gray-700 dark:text-gray-300 text-sm">
                 ¿Quieres agregar este paquete a tu cuenta?
               </p>
 
-              {/* Información del paquete */}
-              <div className="bg-linear-to-br from-[#fdecef] to-[#f9dce2] rounded-xl p-4 border border-[#f3c2cc]">
+              <div className="bg-linear-to-br from-[#fdecef] to-[#f9dce2] dark:from-[#1f2937] dark:to-[#111827] rounded-xl p-4 border border-[#f3c2cc] dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-3">
-                  <Package className="w-5 h-5 text-[#b71f4b]" />
-                  <span className="font-semibold text-gray-800 text-sm">
+                  <Package className="w-5 h-5 text-[#b71f4b] dark:text-[#f2af1e]" />
+                  <span className="font-semibold text-gray-800 dark:text-gray-200 text-sm">
                     Detalles del Paquete
                   </span>
                 </div>
-                <p className="text-sm text-gray-600">
-                  <strong>ID:</strong> {trackingData?.tracking_id || "—"}
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <strong>ID:</strong> {trackingData?.tracking_number || trackingData?.tracking_id || "—"}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   <strong>Estado:</strong>{" "}
                   {(() => {
                     const status = trackingData?.current_status?.toLowerCase() || "";
@@ -300,41 +266,38 @@ export default function Seguimiento() {
                     return trackingData?.current_status || "Pendiente";
                   })()}
                 </p>
-
               </div>
 
-              {/* Información del cliente */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-3">
-                  <User className="w-5 h-5 text-[#b71f4b]" />
-                  <span className="font-semibold text-gray-800 text-sm">
+                  <User className="w-5 h-5 text-[#b71f4b] dark:text-[#f2af1e]" />
+                  <span className="font-semibold text-gray-800 dark:text-gray-200 text-sm">
                     Información de tu Cuenta
                   </span>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   <strong>Nombre:</strong> {userName || "—"}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   <strong>Plan:</strong> {clienteInfo.plan}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   <strong>Sucursal:</strong> {clienteInfo.sucursal}
                 </p>
               </div>
             </div>
 
-            {/* Botones */}
-            <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+            <div className="p-5 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleConfirmAdd}
-                className="flex-1 bg-[#b71f4b] hover:bg-[#a01744] text-white font-semibold rounded-xl py-3 flex items-center justify-center gap-2 transition-all"
+                className="flex-1 bg-[#b71f4b] dark:bg-[#f2af1e] hover:bg-[#a01744] dark:hover:bg-[#e6c565] text-white dark:text-gray-900 font-semibold rounded-xl py-3 flex items-center justify-center gap-2 transition-all"
               >
                 <CheckCircle2 className="w-5 h-5" />
                 <span>Agregar a mi cuenta</span>
               </button>
               <button
                 onClick={handleClose}
-                className="flex-1 border border-gray-300 text-gray-600 font-medium rounded-xl py-3 hover:bg-gray-50"
+                className="flex-1 border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-medium rounded-xl py-3 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 Cancelar
               </button>
@@ -342,6 +305,7 @@ export default function Seguimiento() {
           </div>
         </div>
       )}
+
       <Popup
         show={popup.show}
         onClose={() => setPopup({ ...popup, show: false })}
@@ -352,21 +316,10 @@ export default function Seguimiento() {
   );
 }
 
-/* 🔹 Animación desde abajo */
+/* 🔹 Animaciones */
 const style = document.createElement("style");
 style.innerHTML = `
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
 `;
 document.head.appendChild(style);
-/* 🔹 Animación de arriba hacia abajo */
-const style2 = document.createElement("style");
-style2.innerHTML = `
-@keyframes slideDown {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(100%); opacity: 0; }
-}
-`;
-document.head.appendChild(style2);

@@ -86,63 +86,66 @@ export default function Perfil() {
 
   if (loading) return <Loading />;
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+return (
+  <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+    <Sidebar />
 
-      <main className="flex-1 ml-0 md:ml-20 pb-20 md:pb-0">
-        {/* Header */}
-        <div className="bg-[#b71f4b] text-white p-6 flex items-center justify-start">
+    <main className="flex-1 ml-0 md:ml-20 pb-20 md:pb-0">
+      {/* Header */}
+      <div className="bg-[#b71f4b] dark:bg-gray-900 text-white dark:text-gray-100 p-6 flex items-center justify-start shadow-md dark:shadow-none">
+        <h1 className="text-lg font-semibold tracking-wide">Mi Perfil</h1>
+      </div>
 
-          <h1 className="text-lg font-semibold">Mi Perfil</h1>
-          <div className="w-5" />
-        </div>
-
-        {/* Tabs */}
-        <div className="flex justify-around bg-white ">
-          {[
-            { key: "personal", label: "Personal", icon: <IdCard size={16} /> },
-            { key: "seguridad", label: "Seguridad", icon: <Shield size={16} /> },
-          ].map((item) => (
-            <button
-              key={item.key}
-              onClick={() => setTab(item.key)}
-              className={`flex items-center justify-center gap-2 flex-1 py-3 text-sm font-medium transition-all border-b-2 ${tab === item.key
-                ? "text-[#b71f4b] border-[#b71f4b]"
-                : "text-gray-500 border-transparent hover:text-[#b71f4b]/70"
-                }`}
+      {/* Tabs */}
+      <div className="flex justify-around bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 transition-colors duration-300">
+        {[
+          { key: "personal", label: "Personal", icon: <IdCard size={16} /> },
+          { key: "seguridad", label: "Seguridad", icon: <Shield size={16} /> },
+        ].map((item) => (
+          <button
+            key={item.key}
+            onClick={() => setTab(item.key)}
+            className={`flex items-center justify-center gap-2 flex-1 py-3 text-sm font-medium border-b-2 transition-all duration-200 ${
+              tab === item.key
+                ? "text-[#b71f4b] dark:text-[#f2af1e] border-[#b71f4b] dark:border-[#f2af1e]"
+                : "text-gray-500 dark:text-gray-400 border-transparent hover:text-[#b71f4b]/80 dark:hover:text-[#f2af1e]/80"
+            }`}
+          >
+            <span
+              className={`transition-transform ${
+                tab === item.key
+                  ? "scale-110 text-[#b71f4b] dark:text-[#f2af1e]"
+                  : "text-gray-400 dark:text-gray-500"
+              }`}
             >
-              <span
-                className={`transition-transform ${tab === item.key ? "scale-110 text-[#b71f4b]" : "text-gray-400"
-                  }`}
-              >
-                {item.icon}
-              </span>
-              {item.label}
-            </button>
-          ))}
-        </div>
+              {item.icon}
+            </span>
+            {item.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Contenido */}
-        <div className="p-4 md:p-8 w-full">
-          {/* {tab === "resumen" && <Resumen cliente={cliente} />} */}
-          {tab === "personal" && (
-            <Personal
-              cliente={cliente}
-              editMode={editMode}
-              setEditMode={setEditMode}
-              saving={saving}
-              handleSave={handleSave}
-              setCliente={setCliente}
-            />
-          )}
-          {tab === "seguridad" && <Seguridad />}
-        </div>
-      </main>
+      {/* Contenido */}
+      <div className="p-4 md:p-8 w-full bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+        {tab === "personal" && (
+          <Personal
+            cliente={cliente}
+            editMode={editMode}
+            setEditMode={setEditMode}
+            saving={saving}
+            handleSave={handleSave}
+            setCliente={setCliente}
+          />
+        )}
+        {tab === "seguridad" && <Seguridad />}
+      </div>
+    </main>
 
-      <BottomNav />
-    </div>
-  );
+    <BottomNav />
+  </div>
+);
+
+
 }
 
 /* -------------------------------------------------------------------------- */
@@ -204,10 +207,11 @@ function Personal({ cliente, editMode, setEditMode, saving, handleSave, setClien
 
 
       {/* 🔹 Información personal */}
-      <div className="md:w-[50%] w-full bg-white rounded-2xl p-8 shadow-md space-y-5">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">
-          Información Personal
-        </h3>
+     <div className="md:w-[50%] w-full bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md space-y-5 border border-gray-100 dark:border-gray-800">
+  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
+    Información Personal
+  </h3>
+
 
         <Info
           label="Nombre completo"
@@ -253,7 +257,7 @@ function Personal({ cliente, editMode, setEditMode, saving, handleSave, setClien
           )}
         </div>
       </div>
-
+          
       {/* Popup de éxito o error */}
       <Popup
         show={popupVisible}
@@ -313,8 +317,6 @@ function Seguridad() {
     }
   };
 
-
-
   // 🔹 Cerrar sesión
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -328,59 +330,69 @@ function Seguridad() {
     } else {
       setPopup({
         show: true,
-        message: "Sesión cerrada correctamente.",
+        message: "✅ Sesión cerrada correctamente.",
         type: "success",
       });
       setTimeout(() => navigate("/"), 2000);
     }
   };
 
+  // 🔹 Auto-cierre del popup después de 2.5s
+  useEffect(() => {
+    if (popup.show) {
+      const timer = setTimeout(() => setPopup((prev) => ({ ...prev, show: false })), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [popup.show]);
+
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm space-y-5 border border-gray-100">
-      {/* Encabezado */}
-      <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-        <Lock className="w-5 h-5 text-[#b71f4b]" />
-        <h3 className="text-lg font-semibold text-gray-800">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm space-y-5 border border-gray-100 dark:border-gray-800">
+      <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
+        <Lock className="w-5 h-5 text-[#b71f4b] dark:text-[#f2af1e]" />
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
           Seguridad y Privacidad
         </h3>
       </div>
 
-      {/* Cambiar contraseña */}
+      {/* 🔒 Cambiar contraseña */}
       <div
         onClick={handleChangePassword}
-        className="flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-xl cursor-pointer transition"
+        className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 p-4 rounded-xl cursor-pointer transition"
       >
         <div className="flex items-center gap-3">
-          <div className="bg-[#b71f4b]/10 p-2 rounded-full">
-            <Lock className="w-5 h-5 text-[#b71f4b]" />
+          <div className="bg-[#b71f4b]/10 dark:bg-[#f2af1e]/10 p-2 rounded-full">
+            <Lock className="w-5 h-5 text-[#b71f4b] dark:text-[#f2af1e]" />
           </div>
           <div>
-            <h4 className="font-medium text-gray-800">Cambiar Contraseña</h4>
-            <p className="text-sm text-gray-500">
+            <h4 className="font-medium text-gray-800 dark:text-gray-100">
+              Cambiar Contraseña
+            </h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Actualiza tu contraseña de acceso
             </p>
           </div>
         </div>
-        <span className="text-gray-400 text-sm">›</span>
+        <span className="text-gray-400 dark:text-gray-500 text-sm">›</span>
       </div>
 
-      {/* Cerrar sesión */}
-      <div className="pt-2 border-t border-gray-100">
+      {/* 🔚 Botón de cerrar sesión */}
+      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition"
+          className="w-full flex items-center justify-center gap-2 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition"
         >
           <LogOut className="w-4 h-4" />
           Cerrar Sesión
         </button>
       </div>
 
-      {/* Popup global */}
+      {/* 🔔 Popup general */}
       <Popup
         show={popup.show}
-        onClose={() => setPopup({ ...popup, show: false })}
+        onClose={() => setPopup((prev) => ({ ...prev, show: false }))}
         message={popup.message}
         type={popup.type}
+        duration={2500}
       />
     </div>
   );
@@ -390,13 +402,14 @@ function Seguridad() {
 
 
 
+
 // ✅ Info.jsx
 export function Info({ label, value, icon }) {
   return (
-    <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
-      <div className="text-[#b71f4b]">{icon}</div>
-      <div className="flex flex-col text-gray-700">
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 border border-gray-100 dark:border-gray-700">
+      <div className="text-[#b71f4b] dark:text-[#f2af1e]">{icon}</div>
+      <div className="flex flex-col text-gray-700 dark:text-gray-200">
+        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           {label}
         </span>
         <span className="text-sm">{value || "—"}</span>
@@ -405,35 +418,33 @@ export function Info({ label, value, icon }) {
   );
 }
 
-
-// ✅ EditableInfo.jsx
 export function EditableInfo({ label, value, onChange, icon, editable }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${editable
-        ? "border-2 border-[#b71f4b]/60 bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#b71f4b]/30"
-        : "border border-gray-200 bg-gray-50"
-        }`}
+      className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
+        editable
+          ? "border-2 border-[#b71f4b]/60 dark:border-[#f2af1e]/60 bg-white dark:bg-gray-800 shadow-sm focus-within:ring-2 focus-within:ring-[#b71f4b]/30 dark:focus-within:ring-[#f2af1e]/30"
+          : "border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+      }`}
     >
-      {/* Icono */}
-      <div className="text-[#b71f4b]">{icon}</div>
-
-      {/* Contenido */}
-      <div className="flex flex-col text-gray-700 w-full">
+      <div className="text-[#b71f4b] dark:text-[#f2af1e]">{icon}</div>
+      <div className="flex flex-col text-gray-700 dark:text-gray-200 w-full">
         <span
-          className={`text-xs font-semibold uppercase tracking-wide mb-0.5 ${editable ? "text-[#b71f4b]" : "text-gray-500"
-            }`}
+          className={`text-xs font-semibold uppercase tracking-wide mb-0.5 ${
+            editable
+              ? "text-[#b71f4b] dark:text-[#f2af1e]"
+              : "text-gray-500 dark:text-gray-400"
+          }`}
         >
           {label}
         </span>
 
-        {/* Valor editable */}
         {editable ? (
           <input
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="bg-transparent outline-none text-sm w-full text-gray-900"
+            className="bg-transparent outline-none text-sm w-full text-gray-900 dark:text-gray-100"
           />
         ) : (
           <span className="text-sm">{value || "—"}</span>

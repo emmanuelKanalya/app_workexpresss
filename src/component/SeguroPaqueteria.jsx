@@ -22,134 +22,143 @@ export default function SeguroPaqueteria({ clienteId, precio = 0.99, onPopup }) 
         setUltimaDesactivacion(data.fecha_desactivacion);
       }
     };
-    
-
     fetchSeguro();
   }, [clienteId]);
 
   // 🔹 Cambiar estado del seguro
   const handleToggleSeguro = async () => {
-  if (loading) return;
+    if (loading) return;
 
-  const nuevoEstado = !activo;
-  const now = new Date();
+    const nuevoEstado = !activo;
+    const now = new Date();
 
-  // 📅 Guardar fecha local si desactiva
-  if (!nuevoEstado) {
-    localStorage.setItem("ultimaDesactivacionSeguro", now.toISOString());
-  }
+    if (!nuevoEstado) localStorage.setItem("ultimaDesactivacionSeguro", now.toISOString());
 
-  // 📅 Recuperar fecha local para bloqueo de 90 días
-  const ultimaDesactivacionLocal = localStorage.getItem("ultimaDesactivacionSeguro");
-  if (!nuevoEstado && ultimaDesactivacionLocal) {
-    setUltimaDesactivacion(ultimaDesactivacionLocal);
-  }
+    const ultimaDesactivacionLocal = localStorage.getItem("ultimaDesactivacionSeguro");
+    if (!nuevoEstado && ultimaDesactivacionLocal) setUltimaDesactivacion(ultimaDesactivacionLocal);
 
-  // ⏱️ Si intenta activar antes de 90 días
-  if (
-    !activo &&
-    ultimaDesactivacionLocal &&
-    (now - new Date(ultimaDesactivacionLocal)) / (1000 * 60 * 60 * 24) < 90
-  ) {
+    if (
+      !activo &&
+      ultimaDesactivacionLocal &&
+      (now - new Date(ultimaDesactivacionLocal)) / (1000 * 60 * 60 * 24) < 90
+    ) {
+      onPopup({
+        show: true,
+        success: false,
+        message: "No puedes volver a activar el seguro hasta pasados 90 días.",
+      });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase
+      .from("tb_cliente")
+      .update({ seguro: nuevoEstado })
+      .eq("id_cliente", clienteId);
+
+    setLoading(false);
+
+    if (error) {
+      onPopup({
+        show: true,
+        success: false,
+        message: "Error al actualizar el estado del seguro.",
+      });
+      return;
+    }
+
+    setActivo(nuevoEstado);
     onPopup({
       show: true,
-      success: false,
-      message: "No puedes volver a activar el seguro hasta pasados 90 días.",
+      success: true,
+      message: nuevoEstado
+        ? "Seguro activado correctamente."
+        : "Has desactivado tu seguro. No podrás reactivarlo durante 90 días.",
     });
-    return;
-  }
-
-  setLoading(true);
-  const { error } = await supabase
-    .from("tb_cliente")
-    .update({ seguro: nuevoEstado })
-    .eq("id_cliente", clienteId); // ajusta si es id_cliente o id
-
-  setLoading(false);
-
-  if (error) {
-    onPopup({
-      show: true,
-      success: false,
-      message: "Error al actualizar el estado del seguro.",
-    });
-    return;
-  }
-
-  setActivo(nuevoEstado);
-
-  onPopup({
-    show: true,
-    success: true,
-    message: nuevoEstado
-      ? "Seguro activado correctamente."
-      : "Has desactivado tu seguro. No podrás reactivarlo durante 90 días.",
-  });
-};
-
+  };
 
   return (
     <div
-      className="relative rounded-2xl p-5 shadow-md overflow-hidden transition-all border-2"
-      style={{
-        background: "white",
-        borderColor: activo ? "#b71f4b" : "#ccc",
-        color: activo ? "#b71f4b" : "#999",
-      }}
+      className={`relative rounded-2xl p-5 shadow-md overflow-hidden transition-all border-2 
+        ${activo
+          ? "border-[#b71f4b] dark:border-[#f2af1e]"
+          : "border-gray-300 dark:border-gray-700"
+        } 
+        bg-white dark:bg-gray-900`}
     >
       {/* Encabezado */}
       <div className="flex items-center justify-between mb-3">
         <h3
-          className={`font-semibold text-base ${
-            activo ? "text-[#b71f4b]" : "text-gray-500"
+          className={`font-semibold text-base transition-colors ${
+            activo
+              ? "text-[#b71f4b] dark:text-[#f2af1e]"
+              : "text-gray-600 dark:text-gray-400"
           }`}
         >
           Seguro de Paquetería
         </h3>
         <div
-          className={`p-2 rounded-full ${
-            activo ? "bg-[#b71f4b]/10" : "bg-gray-200"
+          className={`p-2 rounded-full transition-colors ${
+            activo
+              ? "bg-[#b71f4b]/10 dark:bg-[#f2af1e]/10"
+              : "bg-gray-200 dark:bg-gray-800"
           }`}
         >
           <ShieldCheck
-            className={`w-5 h-5 ${activo ? "text-[#b71f4b]" : "text-gray-400"}`}
+            className={`w-5 h-5 transition-colors ${
+              activo
+                ? "text-[#b71f4b] dark:text-[#f2af1e]"
+                : "text-gray-400 dark:text-gray-500"
+            }`}
           />
         </div>
       </div>
 
       {/* Descripción */}
-      <p className="text-sm text-gray-600 mb-3">
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
         Protege tus envíos ante daños o pérdidas durante el transporte.
       </p>
 
       {/* Precio */}
       <p
         className={`text-3xl font-extrabold tracking-tight ${
-          activo ? "text-[#b71f4b]" : "text-gray-500"
+          activo
+            ? "text-[#b71f4b] dark:text-[#f2af1e]"
+            : "text-gray-500 dark:text-gray-400"
         }`}
       >
         ${precio.toFixed(2)}
-        <span className="text-base text-gray-500 font-medium ml-1">
+        <span className="text-base text-gray-500 dark:text-gray-400 font-medium ml-1">
           / Paquete
         </span>
       </p>
 
-      {/* Botón toggle */}
-      <button
-        onClick={handleToggleSeguro}
-        disabled={loading}
-        className={`mt-4 w-full py-2 rounded-lg font-medium transition-all ${
-          activo
-            ? "bg-[#b71f4b] text-white hover:bg-[#a01744]"
-            : "bg-gray-300 text-gray-700 hover:bg-gray-400"
-        }`}
-      >
-        {loading
-          ? "Actualizando..."
-          : activo
-          ? "Desactivar Seguro"
-          : "Activar Seguro"}
-      </button>
+      {/* Toggle Switch */}
+      <div className="mt-5 flex items-center justify-between">
+        <span
+          className={`text-sm font-medium ${
+            activo ? "text-[#b71f4b] dark:text-[#f2af1e]" : "text-gray-500 dark:text-gray-400"
+          }`}
+        >
+          {activo ? "Seguro Activo" : "Seguro Inactivo"}
+        </span>
+
+        <button
+          onClick={handleToggleSeguro}
+          disabled={loading}
+          className={`relative w-14 h-7 flex items-center rounded-full transition-all duration-300 ${
+            activo
+              ? "bg-[#b71f4b] dark:bg-[#f2af1e]"
+              : "bg-gray-300 dark:bg-gray-700"
+          }`}
+        >
+          <span
+            className={`absolute left-1 top-1 w-5 h-5 bg-white dark:bg-gray-900 rounded-full shadow-sm transform transition-transform duration-300 ${
+              activo ? "translate-x-7" : "translate-x-0"
+            }`}
+          ></span>
+        </button>
+      </div>
     </div>
   );
 }

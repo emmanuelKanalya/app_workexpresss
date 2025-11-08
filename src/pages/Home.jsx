@@ -8,8 +8,15 @@ import Notificaciones from "../component/Notificaciones";
 import Promociones from "../component/Promociones";
 import { useAuth } from "../context/AuthContext";
 import ChatBubble from "../component/ChatBubble";
+import { Moon, Sun, Package } from "lucide-react";
+import { motion } from "framer-motion";
+import { ThemeProvider, useTheme } from "../component/ThemeProvider";
+import Logo from "../assets/img/LOGO-ROJO-LETRA.png"
+import LogoP from "../assets/icon/mini_target.webp"
+import Paquetes from "../component/Paquetes";
 export default function Home() {
-  const { user, loading } = useAuth(); // ✅ obtenemos el usuario del contexto
+  const { theme, toggleTheme } = useTheme();
+  const { user, loading } = useAuth();
   const [showBottom, setShowBottom] = useState(true);
   const [userName, setUserName] = useState("");
   const [cliente, setCliente] = useState(null);
@@ -20,7 +27,6 @@ export default function Home() {
     promociones: false,
   });
 
-  // 🧠 Manejo de modales
   const handleModalChange = useCallback((name, isOpen) => {
     setModalsOpen((prev) => {
       if (prev[name] === isOpen) return prev;
@@ -41,97 +47,124 @@ export default function Home() {
     [handleModalChange]
   );
 
-  // 🔹 Obtener el nombre del cliente autenticado
-useEffect(() => {
-  const getCliente = async () => {
-    if (!user?.email) return;
-
-    const { data, error } = await supabase
-      .from("tb_cliente")
-      .select(`
-        nombre,
-        apellido,
-        id_sucursal (
-          id_sucursal,
+  useEffect(() => {
+    const getCliente = async () => {
+      if (!user?.email) return;
+      const { data, error } = await supabase
+        .from("tb_cliente")
+        .select(`
           nombre,
-          direccion
-        )
-      `)
-      .eq("email", user.email)
-      .maybeSingle();
+          apellido,
+          id_sucursal (
+            id_sucursal,
+            nombre,
+            direccion
+          )
+        `)
+        .eq("email", user.email)
+        .maybeSingle();
 
-    if (error) {
-      console.error("Error al obtener cliente:", error.message);
-    } else if (data) {
-      const clienteInfo = {
-        nombre: data.nombre,
-        apellido: data.apellido,
-        sucursal: data.id_sucursal?.nombre || "", // 👈 aquí ya traes el texto
-      };
-      setCliente(clienteInfo);
-      setUserName(data.nombre);
-    }
-  };
+      if (!error && data) {
+        setCliente({
+          nombre: data.nombre,
+          apellido: data.apellido,
+          sucursal: data.id_sucursal?.nombre || "",
+        });
+        setUserName(data.nombre);
+      }
+    };
+    getCliente();
+  }, [user]);
 
-  getCliente();
-}, [user]);
-
-
-
-  // ⏳ Mostrar loading si aún no se ha cargado el contexto
-  if (loading) {
+  if (loading)
     return (
-      <div className="flex justify-center items-center h-screen text-gray-500">
+      <div className="flex justify-center items-center h-screen text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-[#0f172a]">
         Cargando usuario...
       </div>
     );
-  }
 
-  // 🚫 Redirección si no hay sesión activa
   if (!user) {
     window.location.href = "/";
     return null;
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 relative">
-      <Sidebar />
+    <ThemeProvider>
+      <div className="flex min-h-screen bg-gray-50 dark:bg-[#0f172a] text-gray-900 dark:text-gray-100 transition-colors duration-300">
+        <Sidebar />
 
-      <main className="flex-1 ml-0 md:ml-20 pb-20 md:pb-0 p-6 space-y-6">
-        {/* 🔹 Header con saludo y notificaciones */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Hola,</p>
-              <h1 className="text-2xl font-bold text-[#b71f4b]">
+        <main className="flex-1 ml-0 md:ml-20 pb-24 md:pb-6 p-4 space-y-6 w-full max-w-full overflow-x-hidden overflow-y-auto">
+          {/* 🔹 Header */}
+          <div className="flex items-center justify-between bg-white dark:bg-[#0f172a]  rounded-2xl ">
+            {/* 🔸 Logo + Nombre de empresa */}
+            <div className="flex items-center gap-3">
+              {/* Logo pequeño: visible hasta 420 px */}
+              <img
+                src={LogoP}
+                alt="Logo pequeño"
+                className="h-10 block sm:hidden"
+              />
+
+              {/* Logo completo: visible desde 421 px en adelante */}
+              <img
+                src={Logo}
+                alt="Logo completo"
+                className="h-10 hidden sm:block md:hidden"
+              />
+            </div>
+
+
+
+            {/* 🔹 Botones: tema + notificaciones */}
+            <div className="flex items-center gap-3">
+              {/* Botón modo oscuro */}
+              <motion.button
+                onClick={toggleTheme}
+                whileTap={{ scale: 0.9 }}
+                animate={{ rotate: theme === "dark" ? 180 : 0 }}
+                transition={{ duration: 0.5 }}
+                className="p-2 rounded-full bg-white border-(--color-wine) dark:bg-gray-800 border dark:border-[#f2af1e]/30 hover:border-[#f2af1e]/60 shadow-sm transition"
+              >
+                {theme === "light" ? (
+                  <Moon className="w-5 h-5  text-[#b71f4b]" />
+                ) : (
+                  <Sun className="w-5 h-5 text-[#f2af1e]" />
+                )}
+              </motion.button>
+
+              {/* Notificaciones */}
+              <div className="relative">
+                <Notificaciones onModalChange={modalHandlers.notificaciones} />
+              </div>
+            </div>
+          </div>
+          {/* 🟢 Saludo */}
+          <div className="flex gap-2 flex-col justify-center">
+            <div className="flex items-center gap-2">
+              <p className="text-base text-gray-600 dark:text-gray-400">Hola,</p>
+              <h1 className="text-xl font-bold text-[#b71f4b] dark:text-[#f2af1e]">
                 {userName}
               </h1>
             </div>
+
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Aquí tienes un resumen de tus beneficios y casilleros.
+            </p>
           </div>
 
-          {/* Notificaciones compactas */}
-          <div className="relative">
-            <Notificaciones onModalChange={modalHandlers.notificaciones} />
+          {/* 🔹 Resto del contenido */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Promociones onModalChange={modalHandlers.promociones} />
           </div>
-        </div>
+          <Paquetes
+          />
 
-        {/* 🔹 Subtexto */}
-        <p className="text-gray-600 text-sm">
-          Aquí tienes un resumen de tus beneficios y casilleros.
-        </p>
+          <Casillero onModalChange={modalHandlers.casillero} cliente={cliente} />
+          {/* <ChatBubble/> */}
+        </main>
 
-        {/* 🔹 Resto del contenido */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* <Promociones onModalChange={modalHandlers.promociones} /> */}
-        </div>
-
-        {/* <Cartilla onModalChange={modalHandlers.cartilla} /> */}
-        <Casillero onModalChange={modalHandlers.casillero} cliente={cliente} />
-
-        {/* <ChatBubble/> */}
-      </main>
-
-      {showBottom && <BottomNav />}
-    </div>
+        {showBottom && <BottomNav />}
+      </div>
+    </ThemeProvider>
   );
 }

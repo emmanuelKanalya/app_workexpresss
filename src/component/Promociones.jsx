@@ -1,113 +1,156 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Tag, X } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
 
-export default function Promociones({ onModalChange }) {
-  const [showModal, setShowModal] = useState(false);
-  const [promos, setPromos] = useState([
+export default function Promociones() {
+  const [promotions] = useState([
     {
       id: 1,
-      titulo: "2x1 en envíos marítimos 🌊",
-      descripcion: "Envía dos paquetes y paga uno. Válido hasta el 15 de noviembre.",
-      fecha: "Disponible ahora",
+      title: "2x1 en envíos marítimos 🌊",
+      description:
+        "Envía dos paquetes y paga uno. Válido hasta el 15 de noviembre.",
+      validUntil: "15 de noviembre",
+      discount: "2x1",
+      bgColor: "from-[#f2af1e]/90 to-[#b71f4b]/90",
+      image:
+        "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=60",
     },
     {
       id: 2,
-      titulo: "10% de descuento en tu primer envío 🚀",
-      descripcion: "Aprovecha este beneficio exclusivo de bienvenida.",
-      fecha: "Hasta el 30 de noviembre",
+      title: "🚚 Envío Express Gratis",
+      description: "En compras mayores a 100 lbs este mes.",
+      validUntil: "31 de Diciembre",
+      discount: "GRATIS",
+      bgColor: "from-[#f2af1e]/90 to-[#b71f4b]/90",
+      image:
+        "https://images.unsplash.com/photo-1612831662375-295c1003d3b0?auto=format&fit=crop&w=800&q=60",
+    },
+        {
+      id: 3,
+      title: "🚚 Envío Express Gratis",
+      description: "En compras mayores a 100 lbs este mes.",
+      validUntil: "31 de Diciembre",
+      discount: "GRATIS",
+      bgColor: "from-[#f2af1e]/90 to-[#b71f4b]/90",
+      image:
+        "https://images.unsplash.com/photo-1612831662375-295c1003d3b0?auto=format&fit=crop&w=800&q=60",
     },
   ]);
 
-useEffect(() => {
-  if (onModalChange) onModalChange(showModal);
-}, [showModal, onModalChange]);
+  const carouselRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
+  // Detectar la tarjeta visible
+  useEffect(() => {
+    const container = carouselRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollLeft = container.scrollLeft;
+      const width = container.offsetWidth;
+      const newIndex = Math.round(scrollLeft / width);
+      setActiveIndex(newIndex);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const ImageWithFallback = ({ src, alt, className }) => {
+    const [error, setError] = useState(false);
+    return (
+      <img
+        src={
+          error
+            ? "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBvcGFjaXR5PSIuMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIzLjciPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iNiIvPjxwYXRoIGQ9Im0xNiA1OCAxNi0xOCAzMiAzMiIvPjxjaXJjbGUgY3g9IjUzIiBjeT0iMzUiIHI9IjciLz48L3N2Zz4KCg=="
+            : src
+        }
+        alt={alt}
+        className={className}
+        onError={() => setError(true)}
+      />
+    );
+  };
 
   return (
-    <div>
-      {/* 🔹 PREVIEW — vista compacta */}
-      <div
-        onClick={() => setShowModal(true)}
-        className="bg-linear-to-r from-[#b71f4b] to-[#e22d5c] rounded-2xl p-5 shadow-md text-white relative cursor-pointer hover:scale-[1.01] transition"
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Tag className="w-5 h-5" />
-              <h2 className="font-semibold text-lg">Promociones</h2>
+    <div className="mb-8 w-full max-w-3xl mx-auto">
+      <h3 className="text-gray-900 dark:text-white font-semibold mb-4">
+        Promociones y Anuncios
+      </h3>
+
+      {/* Carrusel */}
+      <div className="relative overflow-hidden rounded-3xl">
+        <div
+          ref={carouselRef}
+          className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory space-x-4 pb-4 no-scrollbar"
+          style={{ scrollBehavior: "smooth" }}
+        >
+          {promotions.map((promo) => (
+            <div
+              key={promo.id}
+              className="relative shrink-0 w-full snap-start rounded-3xl overflow-hidden border-0 shadow-md"
+            >
+              <div
+                className={`relative h-56 md:h-64 bg-linear-to-r ${promo.bgColor} overflow-hidden`}
+              >
+                <ImageWithFallback
+                  src={promo.image}
+                  alt={promo.title}
+                  className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
+                />
+
+                {/* Contenido principal */}
+                <div className="relative h-full flex flex-col justify-between p-6 text-white">
+                  <div>
+                    <span className="inline-block bg-white/20 text-white backdrop-blur-sm mb-3 px-3 py-1 rounded-full text-xs border-0">
+                      Válido hasta {promo.validUntil}
+                    </span>
+                    <h3 className="mb-2 font-semibold text-lg">
+                      {promo.title}
+                    </h3>
+                    <p className="opacity-90 text-sm leading-snug">
+                      {promo.description}
+                    </p>
+                  </div>
+
+                  <div className="flex items-end justify-between mt-4">
+                    <div className="text-white">
+                      <span className="opacity-90 text-sm">Descuento</span>
+                      <p className="text-xl font-bold">{promo.discount}</p>
+                    </div>
+                    <button className="bg-white/30 text-white hover:opacity-90 text-sm font-medium px-4 py-2 rounded-xl transition">
+                      Ver más
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-sm opacity-80">
-              Ofertas y beneficios disponibles
-            </p>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="bg-white text-[#b71f4b] font-bold px-3 py-1 rounded-full text-sm shadow">
-              {promos.length}
-            </span>
-            <span className="text-xs text-white/70 mt-1">activas</span>
-          </div>
+          ))}
+        </div>
+
+        {/* Indicadores */}
+        <div className="flex justify-center gap-2 mt-3">
+          {promotions.map((_, i) => (
+            <div
+              key={i}
+              className={`h-2 w-2 rounded-full transition-all ${
+                i === activeIndex
+                  ? "w-6 bg-linear-to-r from-[#f2af1e] to-[#b71f4b]"
+                  : "bg-gray-300"
+              }`}
+            ></div>
+          ))}
         </div>
       </div>
 
-      {/* 🔹 MODAL — vista completa */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative overflow-y-auto max-h-[90vh]"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-            >
-              {/* Header */}
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-5 h-5 text-[#b71f4b]" />
-                  <h3 className="text-lg font-semibold text-[#b71f4b]">
-                    Promociones activas
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Lista de promociones */}
-              <div className="space-y-4">
-                {promos.length === 0 ? (
-                  <p className="text-gray-500 text-sm text-center py-10">
-                    No hay promociones disponibles por ahora 🎉
-                  </p>
-                ) : (
-                  promos.map((promo) => (
-                    <div
-                      key={promo.id}
-                      className="border border-gray-200 rounded-xl p-4 hover:shadow-sm transition"
-                    >
-                      <h4 className="font-semibold text-gray-800 text-sm mb-1">
-                        {promo.titulo}
-                      </h4>
-                      <p className="text-gray-600 text-sm mb-2">
-                        {promo.descripcion}
-                      </p>
-                      <span className="text-xs text-gray-400">{promo.fecha}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Estilos personalizados */}
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }

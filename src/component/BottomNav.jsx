@@ -6,14 +6,22 @@ export default function BottomNav() {
   const location = useLocation();
 
   const tabs = [
-    { id: "home",label: "Inicio", icon: Home, path: "/home" },
+    { id: "home", label: "Inicio", icon: Home, path: "/home" },
     { id: "facturas", label: "Facturas", icon: FileText, path: "/facturas" },
     { id: "seguimiento", label: "Seguimiento", icon: PackageSearch, path: "/seguimiento" },
     { id: "perfil", label: "Perfil", icon: User, path: "/perfil" },
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg flex justify-around py-2 sm:py-3 z-50">
+    <div
+      className="
+        md:hidden fixed bottom-0 left-0 right-0
+        bg-white dark:bg-gray-900
+        border-t border-gray-200 dark:border-gray-700
+        shadow-lg flex justify-around py-2 sm:py-3 z-50
+        transition-colors duration-300
+      "
+    >
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const active = location.pathname === tab.path;
@@ -22,15 +30,22 @@ export default function BottomNav() {
           <button
             key={tab.id}
             onClick={() => navigate(tab.path)}
-            className={`flex flex-col items-center justify-center px-4 py-1 rounded-xl transition-all ${
-              active
-                ? "text-[#b71f4b] bg-linear-to-r from-rose-50 to-rose-100 shadow-inner"
-                : "text-gray-500 hover:text-[#b71f4b]"
-            }`}
+            className={`
+              flex flex-col items-center justify-center px-4 py-1 rounded-xl transition-all duration-200
+              ${
+                active
+                  ? "text-[#b71f4b] dark:text-[#f2af1e] bg-rose-50 dark:bg-[#1f2937] shadow-inner"
+                  : "text-gray-500 dark:text-gray-400 hover:text-[#b71f4b] dark:hover:text-[#f2af1e]"
+              }
+            `}
           >
             <Icon
               size={22}
-              className={`mb-1 ${active ? "text-[#b71f4b]" : "text-gray-500"}`}
+              className={`mb-1 transition-colors duration-300 ${
+                active
+                  ? "text-[#b71f4b] dark:text-[#f2af1e]"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
             />
             <span className="text-xs font-medium">{tab.label}</span>
           </button>
