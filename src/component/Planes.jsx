@@ -106,7 +106,7 @@ export default function Planes({ clienteId, onPopup }) {
           Plan y Sucursal
         </h3>
 
-        {!editMode ? (
+        {/* {!editMode ? (
           <button
             onClick={tryEdit}
             className="bg-orange-500/30 dark:bg-pink-500/30 rounded-full p-2"
@@ -117,7 +117,7 @@ export default function Planes({ clienteId, onPopup }) {
           <button onClick={() => setEditMode(false)} className="bg-orange-500/30 dark:bg-pink-500/30 rounded-full p-2">
             <XCircle size={16} className="text-orange-500 dark:text-pink-500" />
           </button>
-        )}
+        )} */}
       </div>
 
       {/* Sucursal */}

@@ -19,7 +19,7 @@ export default function Home() {
   const { theme, toggleTheme } = useTheme();
   const { user, loading } = useAuth();
   const [showBottom, setShowBottom] = useState(true);
-   const { cliente, cargarCliente, cargarPaquetes } = useAppStore();
+  const { cliente, cargarCliente, cargarPaquetes } = useAppStore();
   const [modalsOpen, setModalsOpen] = useState({
     cartilla: false,
     casillero: false,
@@ -119,7 +119,7 @@ export default function Home() {
 
               {/* Notificaciones */}
               <div className="relative">
-               <Notificaciones cliente={cliente} onModalChange={modalHandlers.notificaciones} />
+                <Notificaciones cliente={cliente} onModalChange={modalHandlers.notificaciones} />
 
               </div>
             </div>
@@ -140,37 +140,36 @@ export default function Home() {
 
           {/* 🔹 Resto del contenido */}
           {/* MOBILE: todo en columna */}
-<div className="flex flex-col gap-4 lg:hidden">
-  <WillySeguimiento/>
-  <Paquetes />
-  <Promociones onModalChange={modalHandlers.promociones} />
-  <Cartilla />
-  <Casillero cliente={cliente} />
-</div>
+          <div className="flex flex-col gap-4 lg:hidden">
+            <WillySeguimiento />
+            <Paquetes />
+            {/* <Promociones onModalChange={modalHandlers.promociones} />
+            <Cartilla /> */}
+            <Casillero cliente={cliente} onModalChange={modalHandlers.casillero} />
+          </div>
 
-{/* DESKTOP: 2 filas con 3/4 y 1/4 */}
-<div className="hidden lg:grid lg:grid-cols-4 lg:gap-4">
-  
-  {/* Fila 1 */}
-  <div className="lg:col-span-1 order-1">
-    <Cartilla />
-    
-  </div>
-  <div className="lg:col-span-3 order-2">
-    <Promociones onModalChange={modalHandlers.promociones} />
-  </div>
+          {/* DESKTOP: 2 filas con 3/4 y 1/4 */}
+          <div className="hidden lg:grid lg:grid-cols-4 lg:gap-4">
 
-  {/* Fila 2 */}
-  <div className="lg:col-span-3 order-3">
-    <Paquetes />
-  </div>
-  <div className="lg:col-span-1 order-4">
-    <Casillero cliente={cliente} />
-  </div>
+            {/* Fila 1 */}
+            <div className="lg:col-span-1 order-1">
+              {/* <Cartilla /> */}
+            </div>
+            <div className="lg:col-span-3 order-2">
+              {/* <Promociones onModalChange={modalHandlers.promociones} /> */}
+            </div>
 
-</div>
+            {/* Fila 2 */}
+            <div className="lg:col-span-3 order-3">
+              <Paquetes />
+            </div>
+            <div className="lg:col-span-1 order-4">
+              <Casillero cliente={cliente} />
+            </div>
 
-        
+          </div>
+
+
 
 
 

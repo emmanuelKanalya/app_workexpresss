@@ -208,23 +208,6 @@ export default function Facturas({ cliente }) {
     setDetalleVisible(true);
   };
 
-  //  Selección múltiple
-  // const toggleSelect = (codigo) => {
-  //   setSelected((prev) =>
-  //     prev.includes(codigo) ? prev.filter((id) => id !== codigo) : [...prev, codigo]
-  //   );
-  // };
-
-  // const total = pendientes
-  //   .filter((f) => selected.includes(f.numero))
-  //   .reduce((sum, f) => sum + (f.total || 0), 0)
-  //   .toFixed(2);
-
-  // const allSelected = pendientes.length > 0 && selected.length === pendientes.length;
-
-  // const toggleSelectAll = () => {
-  //   setSelected(allSelected ? [] : pendientes.map((f) => f.numero));
-  // };
   useEffect(() => {
     // Nada seleccionado → cerrar todo
     if (selected.length === 0) {
@@ -248,11 +231,11 @@ export default function Facturas({ cliente }) {
     setShowBottom(!preview && !detalleVisible && !modalTipoPago);
   }, [preview, detalleVisible, modalTipoPago]);
   const facturasSeleccionadas =
-  tab === "pendientes"
-    ? pendientes.filter((f) => selected.includes(f.numero))
-    : tab === "parcial"
-    ? parcial.filter((f) => selected.includes(f.numero))
-    : [];
+    tab === "pendientes"
+      ? pendientes.filter((f) => selected.includes(f.numero))
+      : tab === "parcial"
+        ? parcial.filter((f) => selected.includes(f.numero))
+        : [];
 
 
   //  UI principal
@@ -455,7 +438,7 @@ export default function Facturas({ cliente }) {
                   </p>
 
                   <div className="bg-gray-100 dark:bg-[#0e171e] rounded-2xl p-4 mb-5 max-h-72 overflow-y-auto space-y-3">
-                    {pendientes
+                    {facturasSeleccionadas
                       .filter((f) => selected.includes(f.numero))
                       .map((f) => (
                         <div
@@ -468,8 +451,12 @@ export default function Facturas({ cliente }) {
                                 #{f.numero}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Total: ${f.total?.toFixed(2)}
+                                Total: $
+                                {tab === "pendientes"
+                                  ? Number(f.total).toFixed(2)
+                                  : Number(f.total_restante).toFixed(2)}
                               </p>
+
                             </div>
 
                             <input
@@ -528,7 +515,7 @@ export default function Facturas({ cliente }) {
                     <span>Total a Pagar:</span>
                     <span className="text-orange-500 dark:text-pink-500 text-2xl">
                       $
-                      {pendientes
+                      {facturasSeleccionadas
                         .filter((f) => selected.includes(f.numero))
                         .reduce(
                           (sum, f) => sum + (parseFloat(f.montoParcial) || 0),
@@ -540,7 +527,7 @@ export default function Facturas({ cliente }) {
 
                   <button
                     onClick={async () => {
-                      const facturasParciales = pendientes.filter(
+                      const facturasParciales = facturasSeleccionadas.filter(
                         (f) =>
                           selected.includes(f.numero) &&
                           parseFloat(f.montoParcial) > 0
@@ -634,7 +621,7 @@ export default function Facturas({ cliente }) {
                     <div className="text-sm text-gray-500 dark:text-gray-400 text-start mb-5">
                       <p className="text-sm text-gray-500 dark:text-gray-400 text-start mb-5">
                         Factura:{" "}
-                        {pendientes
+                        {facturasSeleccionadas
                           .filter((f) => selected.includes(f.numero))
                           .map((f) => f.numero)
                           .join(", ")}
@@ -646,11 +633,24 @@ export default function Facturas({ cliente }) {
                       <span className="text-sm opacity-90">Total a Pagar</span>
                       <span className="text-3xl font-bold mt-1">
                         $
-                        {pendientes
+                        {facturasSeleccionadas
                           .filter((f) => selected.includes(f.numero))
-                          .reduce((sum, f) => sum + (f.total || 0), 0)
+                          .reduce((sum, f) => {
+                            // Si estoy en PENDIENTES → total
+                            if (tab === "pendientes") {
+                              return sum + (Number(f.total) || 0);
+                            }
+
+                            // Si estoy en PARCIAL → restante
+                            if (tab === "parcial") {
+                              return sum + (Number(f.total_restante) || 0);
+                            }
+
+                            return sum;
+                          }, 0)
                           .toFixed(2)}
                       </span>
+
                     </div>
 
                     <div className="flex justify-around gap-3 mt-6">
@@ -669,55 +669,42 @@ export default function Facturas({ cliente }) {
                       {/* Pagar ahora */}
                       <button
                         onClick={async () => {
-                          const facturasTotales = pendientes.filter((f) =>
+                          const facturasTotales = facturasSeleccionadas.filter((f) =>
                             selected.includes(f.numero)
                           );
 
-                          for (const f of facturasTotales) {
-                            const totalPagado = f.total?.toFixed(2) || 0;
-                            const totalRestante = 0;
+                          // 🔹 Total real que se va a pagar
+                          const total = facturasTotales.reduce((sum, f) => {
+                            if (tab === "pendientes") return sum + Number(f.total);
+                            if (tab === "parcial") return sum + Number(f.total_restante);
+                            return sum;
+                          }, 0);
 
-                            // ✅ Actualiza factura
-                            const { error: updateError } = await supabase
-                              .from("tb_factura")
-                              .update({
-                                total_pagado: totalPagado,
-                                total_restante: totalRestante,
-                                estado: "pagado",
-                              })
-                              .eq("id_factura", f.id_factura);
+                          // 🔥 Invocar edge function que crea el checkout de Tilopay
+                          const { data, error } = await supabase.functions.invoke("crear_pago", {
+                            body: {
+                              monto: total,
+                              descripcion: `Pago facturas: ${facturasTotales.map((f) => f.numero).join(", ")}`,
+                              id_cliente: cliente.id_cliente,
+                              facturas: facturasTotales.map((f) => f.id_factura),
+                            },
+                          });
 
-                            if (updateError) {
-                              console.error(
-                                `❌ Error actualizando factura ${f.numero}:`,
-                                updateError.message
-                              );
-                              continue;
-                            }
-
-                            // ✅ Inserta pago total
-                            const { error: pagoError } = await supabase.from("tb_pago_factura").insert([
-                              {
-                                id_factura: f.id_factura,
-                                id_cliente: cliente.id_cliente,
-                                monto: parseFloat(totalPagado),
-                                id_metodo_pago: "a9600036-34e9-4ab0-883a-fad419195875",
-                                observacion: `Pago total de factura ${f.numero}`,
-                                fecha_pago: new Date().toISOString(),
-                              },
-                            ]);
-
-                            if (pagoError)
-                              console.error(`⚠️ Error insertando pago ${f.numero}:`, pagoError.message);
-                            else console.log(`✅ Pago total registrado (${f.numero})`);
+                          if (error) {
+                            console.error("❌ Error creando pago:", error);
+                            return;
                           }
 
-                          setPreview(false);
+                          // Tilopay devuelve la URL del checkout → redirección inmediata
+                          if (data?.url) {
+                            window.location.href = data.url;
+                          }
                         }}
                         className="flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-medium text-white bg-linear-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 transition-all shadow-sm"
                       >
-                        Pagar Total
+                        Pago total
                       </button>
+
                     </div>
 
 
