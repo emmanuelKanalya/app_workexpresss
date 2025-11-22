@@ -693,7 +693,7 @@ export default function Facturas({ cliente }) {
                               facturas: facturasTotales.map((f) => f.id_factura),
                             },
                           });
-
+                          console.log("RESPUESTA COMPLETA:", resp);
                           if (error) {
                             console.error("❌ Error creando pago:", error);
                             alert("Hubo un error al crear el pago. Por favor, intenta nuevamente.");
