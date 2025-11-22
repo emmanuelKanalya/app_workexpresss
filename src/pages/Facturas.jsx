@@ -669,18 +669,21 @@ export default function Facturas({ cliente }) {
                       {/* Pagar ahora */}
                       <button
                         onClick={async () => {
+                          // Deshabilitar el botón mientras se espera la respuesta
+                          const button = document.querySelector("#pago-btn");
+                          button.disabled = true;
+
                           const facturasTotales = facturasSeleccionadas.filter((f) =>
                             selected.includes(f.numero)
                           );
 
-                          // 🔹 Total real que se va a pagar
                           const total = facturasTotales.reduce((sum, f) => {
                             if (tab === "pendientes") return sum + Number(f.total);
                             if (tab === "parcial") return sum + Number(f.total_restante);
                             return sum;
                           }, 0);
 
-                          // 🔥 Invocar edge function que crea el checkout de Tilopay
+                          // Invocar la función para crear el pago
                           const { data, error } = await supabase.functions.invoke("crear_pago", {
                             body: {
                               monto: total,
@@ -692,18 +695,26 @@ export default function Facturas({ cliente }) {
 
                           if (error) {
                             console.error("❌ Error creando pago:", error);
+                            alert("Hubo un error al crear el pago. Por favor, intenta nuevamente.");
+                            button.disabled = false; // Habilitar el botón si ocurre un error
                             return;
                           }
 
-                          // Tilopay devuelve la URL del checkout → redirección inmediata
+                          // Redirigir a la URL de pago de Tilopay
                           if (data?.url) {
                             window.location.href = data.url;
+                          } else {
+                            alert("No se pudo obtener la URL de pago. Intenta nuevamente.");
                           }
+
+                          button.disabled = false; // Habilitar el botón después de redirigir
                         }}
                         className="flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-medium text-white bg-linear-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 transition-all shadow-sm"
+                        id="pago-btn"
                       >
                         Pago total
                       </button>
+
 
                     </div>
 
