@@ -23,6 +23,103 @@ export default function Facturas({ cliente }) {
 
   // 👇 ref para el botón de pago total (en vez de querySelector)
   const payButtonRef = useRef(null);
+  // Popup Tilopay
+  const [popupTilopay, setPopupTilopay] = useState({
+    show: false,
+    type: "",
+    message: ""
+  });
+
+  // Detectar retorno de Tilopay
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+
+  const code = params.get("code");   // Tilopay payment status
+  const order = params.get("order"); // Número de factura(s)
+  const tpt = params.get("tilopay-transaction");
+
+  if (code === "1") {
+    // Pago aprobado
+    procesarPagoCompleto(order);
+    setPopupTilopay({
+      show: true,
+      type: "success",
+      message: "Pago realizado con éxito. Tus facturas han sido procesadas."
+    });
+
+    setTimeout(() => {
+      window.history.replaceState({}, document.title, "/facturas");
+    }, 100);
+  }
+
+  if (code === "0") {
+    // Pago fallido / cancelado
+    setPopupTilopay({
+      show: true,
+      type: "cancel",
+      message: "El pago no fue completado."
+    });
+
+    setTimeout(() => {
+      window.history.replaceState({}, document.title, "/facturas");
+    }, 100);
+  }
+}, []);
+
+async function procesarPagoCompleto(order) {
+  try {
+    if (!order) return;
+
+    // Puede venir solo uno o varios separados por coma
+    const codigos = order.includes(",")
+      ? order.split(",")
+      : [order];
+
+    for (const codigo of codigos) {
+      const { data: factura, error: getErr } = await supabase
+        .from("tb_factura")
+        .select("*")
+        .eq("numero", codigo.trim())
+        .single();
+
+      if (getErr || !factura) continue;
+
+      const total = factura.total_restante > 0
+        ? factura.total_restante
+        : factura.total;
+
+      // 1️⃣ marcar factura como pagada
+      await supabase
+        .from("tb_factura")
+        .update({
+          estado: "pagado",
+          total_pagado: total,
+          total_restante: 0
+        })
+        .eq("id_factura", factura.id_factura);
+
+      // 2️⃣ registrar pago en tb_pago_factura
+      await supabase
+        .from("tb_pago_factura")
+        .insert([
+          {
+            id_factura: factura.id_factura,
+            id_cliente: factura.id_cliente,
+            monto: total,
+            id_metodo_pago: "a9600036-34e9-4ab0-883a-fad419195875",
+            observacion: `Pago completo via Tilopay (${codigo})`,
+            fecha_pago: new Date().toISOString(),
+            referencia: order
+          }
+        ]);
+    }
+
+    console.log("🔥 Facturas procesadas correctamente");
+  } catch (err) {
+    console.error("❌ Error procesando pago:", err);
+  }
+}
+
 
   // 🔹 Mostrar / ocultar BottomNav según modales
   useEffect(() => {
@@ -241,8 +338,8 @@ export default function Facturas({ cliente }) {
     tab === "pendientes"
       ? pendientes.filter((f) => selected.includes(f.numero))
       : tab === "parcial"
-      ? parcial.filter((f) => selected.includes(f.numero))
-      : [];
+        ? parcial.filter((f) => selected.includes(f.numero))
+        : [];
 
   // 🔹 Handler de pago total (móvil-safe)
   const handlePagoTotal = async () => {
@@ -347,32 +444,29 @@ export default function Facturas({ cliente }) {
         <div className="mt-4 flex bg-transparent p-1 mb-5 transition-colors duration-300 max-w-96 gap-2">
           <button
             onClick={() => setTab("pendientes")}
-            className={`flex-1 p-2 rounded-sm text-xs sm:text-sm font-medium transition-colors duration-300 ${
-              tab === "pendientes"
+            className={`flex-1 p-2 rounded-sm text-xs sm:text-sm font-medium transition-colors duration-300 ${tab === "pendientes"
                 ? "bg-[#d30046] text-white"
                 : "text-[#01060c] dark:text-white cursor-pointer hover:bg-[#d30046]/50 border border-gray-200 dark:border-gray-700 "
-            }`}
+              }`}
           >
             Pendientes ({pendientes.length})
           </button>
 
           <button
             onClick={() => setTab("parcial")}
-            className={`flex-1 p-2 rounded-sm text-xs sm:text-sm font-medium transition-colors duration-300 ${
-              tab === "parcial"
+            className={`flex-1 p-2 rounded-sm text-xs sm:text-sm font-medium transition-colors duration-300 ${tab === "parcial"
                 ? "bg-[#d30046] text-white"
                 : "text-[#01060c] dark:text-white cursor-pointer hover:bg-[#d30046]/50 border border-gray-200 dark:border-gray-700"
-            }`}
+              }`}
           >
             Parcial ({parcial.length})
           </button>
           <button
             onClick={() => setTab("pagadas")}
-            className={`flex-1 p-2 rounded-sm text-xs sm:text-sm font-medium transition-colors duration-300 ${
-              tab === "pagadas"
+            className={`flex-1 p-2 rounded-sm text-xs sm:text-sm font-medium transition-colors duration-300 ${tab === "pagadas"
                 ? "bg-[#d30046] text-white"
                 : "text-[#01060c] dark:text-white cursor-pointer hover:bg-[#d30046]/50 border border-gray-200 dark:border-gray-700 "
-            }`}
+              }`}
           >
             Pagadas ({pagadas.length})
           </button>
@@ -586,10 +680,10 @@ export default function Facturas({ cliente }) {
                                     prev.map((fact) =>
                                       fact.numero === f.numero
                                         ? {
-                                            ...fact,
-                                            montoParcial:
-                                              limitado.toFixed(2),
-                                          }
+                                          ...fact,
+                                          montoParcial:
+                                            limitado.toFixed(2),
+                                        }
                                         : fact
                                     )
                                   );
@@ -793,6 +887,36 @@ export default function Facturas({ cliente }) {
             )}
           </>
         )}
+        {popupTilopay.show && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-[9999]">
+            <div className="bg-white dark:bg-[#01060c] text-gray-900 dark:text-white w-[90%] max-w-md p-6 rounded-2xl shadow-2xl animate-fadeIn">
+
+              <div className="flex items-center gap-3 mb-4">
+                {popupTilopay.type === "success" ? (
+                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+                ) : (
+                  <X className="w-8 h-8 text-red-500" />
+                )}
+                <h2 className="text-xl font-bold">
+                  {popupTilopay.type === "success" ? "Pago exitoso" : "Pago cancelado"}
+                </h2>
+              </div>
+
+              <p className="text-gray-700 dark:text-gray-300 text-sm mb-6">
+                {popupTilopay.message}
+              </p>
+
+              <button
+                onClick={() => setPopupTilopay({ show: false })}
+                className="w-full bg-[#b71f4b] dark:bg-[#f2af1e] text-white dark:text-black py-3 rounded-xl font-semibold hover:opacity-90 transition"
+              >
+                Cerrar
+              </button>
+
+            </div>
+          </div>
+        )}
+
       </main>
 
       {showBottom && <BottomNav />}

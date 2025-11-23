@@ -9,17 +9,23 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import Popup from "../component/Popup";
 import { useTheme } from "../component/ThemeProvider"; // 👈 agregado
+const MAP_ESTADOS = {
+  RECEIVED: "bodega miami",
+  IN_TRANSIT: "En tránsito",
+  ARRIVED: "En tránsito",
+  WAREHOUSED: "En tránsito",
+  DELIVERED: "En tránsito",
+};
+
 const mapEstado = (estado) => {
   if (!estado) return "Pendiente";
 
-  const st = estado.toLowerCase();
+  // estado viene de la API como "RECEIVED", "IN_TRANSIT", etc.
+  const limpio = estado.trim().toUpperCase();
 
-  if (st.includes("transit") || st.includes("tránsito")) return "En tránsito";
-  if (st.includes("received")) return "Bodega Miami";
-  if (st.includes("invoiced")) return "Facturado";
-
-  return estado; // si no matchea, devuelve el original
+  return MAP_ESTADOS[limpio] || "En tránsito";
 };
+
 export default function Seguimiento() {
   const { user, loading } = useAuth();
   const { theme, toggleTheme } = useTheme(); // 👈 controla el tema global
@@ -43,7 +49,7 @@ export default function Seguimiento() {
   const [showModal, setShowModal] = useState(false);
   const [allowOpen, setAllowOpen] = useState(false);
   const [closing, setClosing] = useState(false);
-  
+
   // 🔹 Obtener datos del cliente
   useEffect(() => {
     const getUserData = async () => {
@@ -113,7 +119,7 @@ export default function Seguimiento() {
         .upsert([
           {
             tracking_id: trackingId,
-            estado: result.data.current_status || "EN PROCESO",
+            estado: mapEstado(result.data.current_status),
             fecha_actualizacion: new Date().toISOString(),
           },
         ])
@@ -197,7 +203,7 @@ export default function Seguimiento() {
             monto: 0, // si aplica un pago inicial, cámbialo
             descripcion: `Paquete vinculado: ${mapEstado(trackingData?.current_status)}`,
             fecha_registro: new Date().toISOString(),
-            id_metodo_pago:"a9600036-34e9-4ab0-883a-fad419195875",
+            id_metodo_pago: "a9600036-34e9-4ab0-883a-fad419195875",
           },
         ]);
 
@@ -301,14 +307,9 @@ export default function Seguimiento() {
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   <strong>Estado:</strong>{" "}
-                  {(() => {
-                    const status = trackingData?.current_status?.toLowerCase() || "";
-                    if (status.includes("transit") || status.includes("tránsito")) return "En tránsito a Panamá";
-                    if (status.includes("received")) return "Bodega Miami";
-                    if (status.includes("invoiced")) return "Facturado";
-                    return trackingData?.current_status || "Pendiente";
-                  })()}
+                  {mapEstado(trackingData?.current_status)}
                 </p>
+
               </div>
 
               <div className="bg-white dark:bg-[#040c13] rounded-xl p-4 border border-gray-300 dark:border-gray-700">

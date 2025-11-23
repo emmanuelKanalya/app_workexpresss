@@ -18,7 +18,7 @@ export function Timeline({ events = [] }) {
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center ${
                 event.completed
-                  ? "bg-linear-to-br from-red-600 to-amber-600"
+                  ? " bg-linear-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
                   : "bg-gray-200"
               }`}
             >
@@ -33,7 +33,7 @@ export function Timeline({ events = [] }) {
               <div
                 className={`w-0.5 h-16 ${
                   event.completed
-                    ? "bg-linear-to-b from-red-600 to-amber-600"
+                    ? " bg-linear-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
                     : "bg-gray-200"
                 }`}
               />

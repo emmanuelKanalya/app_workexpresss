@@ -4,6 +4,7 @@ import Sidebar from "../component/Sidebar";
 import BottomNav from "../component/BottomNav";
 import Casillero from "../component/Casillero";
 import Cartilla from "../component/Cartilla";
+import PackageDetailModal from "../component/PackageDetailModal";
 import Notificaciones from "../component/Notificaciones";
 import { useAppStore } from "../store/appStore";
 import Promociones from "../component/Promociones";
@@ -25,6 +26,8 @@ export default function Home() {
     casillero: false,
     notificaciones: false,
     promociones: false,
+    detallesPaquetes: false
+
   });
 
   const handleModalChange = useCallback((name, isOpen) => {
@@ -43,6 +46,7 @@ export default function Home() {
       casillero: (isOpen) => handleModalChange("casillero", isOpen),
       notificaciones: (isOpen) => handleModalChange("notificaciones", isOpen),
       promociones: (isOpen) => handleModalChange("promociones", isOpen),
+      detallesPaquetes: (isOpen) => handleModalChange("detallesPaquetes", isOpen),
     }),
     [handleModalChange]
   );
@@ -60,6 +64,7 @@ export default function Home() {
       cargarPaquetes(cliente.id_cliente);
     }
   }, [cliente]);
+
 
   if (loading)
     return (

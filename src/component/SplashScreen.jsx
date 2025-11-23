@@ -28,7 +28,7 @@ export default function SplashScreen({ onFinish }) {
   }, [onFinish]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#f2af1e] via-[#ed933e] to-[#ea6342] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-linear-to-br from-[#f2af1e] via-[#ed933e] to-[#ea6342] overflow-hidden">
       {/* 🔸 Círculos de fondo animados */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#b71f4b]/30 rounded-full blur-3xl animate-pulse"></div>
@@ -62,7 +62,7 @@ export default function SplashScreen({ onFinish }) {
           <div className="relative">
             <div className="absolute inset-0 bg-white/30 rounded-full blur-2xl animate-pulse"></div>
             <div className="relative w-32 h-32 bg-white rounded-full shadow-2xl flex items-center justify-center">
-              <div className="w-28 h-28 bg-gradient-to-br from-[#f2af1e] to-[#b71f4b] rounded-full flex items-center justify-center">
+              <div className="w-28 h-28 bg-linear-to-br from-[#f2af1e] to-[#b71f4b] rounded-full flex items-center justify-center">
                 <Package className="w-14 h-14 text-white animate-bounce-slow" />
               </div>
             </div>
@@ -91,7 +91,7 @@ export default function SplashScreen({ onFinish }) {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/10 to-transparent"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-black/10 to-transparent"></div>
 
       {/* Animaciones CSS personalizadas */}
       <style>{`

@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabaseClient";
 import PackageDetailModal from "./PackageDetailModal";
 import { useAppStore } from "../store/appStore";
 
+
 export default function Paquetes() {
   const navigate = useNavigate();
   // const [paquetes, setPaquetes] = useState([]);
@@ -12,62 +13,71 @@ export default function Paquetes() {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [history, setHistory] = useState([]); // si luego quieres rastreo real
   const paquetes = useAppStore(state => state.paquetes);
+  const consultarTracking = useAppStore(state => state.consultarTracking);
 
-  // useEffect(() => {
-  //   const fetchPaquetes = async () => {
-  //     try {
-  //       // 🔹 Obtener usuario autenticado
-  //       const {
-  //         data: { user },
-  //       } = await supabase.auth.getUser();
+  useEffect(() => {
+    if (showModal) {
+      // ❌ bloquea el scroll del body
+      document.body.style.overflow = "hidden";
+    } else {
+      // ✅ restaura el scroll
+      document.body.style.overflow = "";
+    }
 
-  //       if (!user?.email) {
-  //         setLoading(false);
-  //         return;
-  //       }
+    // Cleanup por si React desmonta
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showModal]);
 
-  //       setCorreo(user.email);
+  function generarHistorialDesdeEstado(estado, fecha) {
+  const s = estado?.toLowerCase() || "";
+  const events = [];
 
-  //       // 🔹 Buscar cliente por correo
-  //       const { data: cliente } = await supabase
-  //         .from("tb_cliente")
-  //         .select("id_cliente")
-  //         .eq("email", user.email)
-  //         .maybeSingle();
+  // Siempre agregamos el primer evento:
+  events.push({
+    status: "Recibido en Miami",
+    location: "Bodega Miami",
+    date: new Date(fecha).toLocaleDateString("es-ES"),
+    time: new Date(fecha).toLocaleTimeString("es-ES"),
+    description: "El paquete fue recibido en la bodega de Miami.",
+    icon: Clock
+  });
 
-  //       if (!cliente) {
-  //         setLoading(false);
-  //         return;
-  //       }
+  // 2️⃣ Detectar tránsito (TODAS las variantes correctas)
+  if (
+    s.includes("transit") ||
+    s.includes("tránsito") ||
+    s.includes("transito") ||
+    s.startsWith("en tránsito") ||
+    s.startsWith("en transito")
+  ) {
+    events.unshift({
+      status: "En tránsito",
+      location: "Moviéndose hacia Panamá",
+      date: new Date().toLocaleDateString("es-ES"),
+      time: new Date().toLocaleTimeString("es-ES"),
+      description: "Tu paquete está viajando hacia el país.",
+      icon: Truck
+    });
+  }
 
-  //       // 🔹 Buscar paquetes del cliente
-  //       const { data: dataPaquetes, error } = await supabase
-  //         .from("tb_paquetes")
-  //         .select(
-  //           "id_paquetes, tracking_id, nombre_en_etiqueta, estado, peso_real, largo, ancho, altura, created_at"
-  //         )
-  //         .eq("id_cliente", cliente.id_cliente)
-  //         .order("created_at", { ascending: false });
+  // 3️⃣ Facturado
+  if (s.includes("facturado") || s.includes("invoiced")) {
+    events.unshift({
+      status: "Facturado en Panamá",
+      location: "Centro Logístico WorkExpress",
+      date: new Date().toLocaleDateString("es-ES"),
+      time: new Date().toLocaleTimeString("es-ES"),
+      description: "Tu paquete está listo para entrega.",
+      icon: CheckCircle2
+    });
+  }
 
-  //       if (error) throw error;
-  //       setPaquetes(dataPaquetes || []);
-  //     } catch (err) {
-  //       console.error("Error cargando paquetes:", err.message);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+  return events;
+}
 
-  //   fetchPaquetes();
-  // }, []);
 
-  //   if (loading) {
-  //     return (
-  //       <div className="flex items-center justify-center py-10 text-gray-500 dark:text-gray-400">
-  //         Cargando tus paquetes...
-  //       </div>
-  //     );
-  //   }
 
   return (
     <div className="bg-linear-to-br from-[#d30046] via-orange-500 to-[#db2fb2] text-white rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-800 transition-colors">
@@ -134,62 +144,55 @@ export default function Paquetes() {
 
               {/* Botón */}
               <button
-                onClick={() => {
+                onClick={async () => {
+                  const resp = await consultarTracking(p.tracking_id);
+
+                  let historialFinal = [];
+
+                  if (resp.error || !resp.data?.list_status_history?.length) {
+                    // SIN API → usar historial basado en estado local
+                    historialFinal = generarHistorialDesdeEstado(p.estado, p.created_at);
+                  } else {
+                    // CON API → historial real
+                    historialFinal = resp.data.list_status_history.map((h) => ({
+                      status: h.status,
+                      location: h.location,
+                      date: new Date(h.date).toLocaleDateString("es-ES"),
+                      time: new Date(h.date).toLocaleTimeString("es-ES"),
+                      description: h.description || "",
+                      icon: seleccionarIconoEstado(h.status),
+                    }));
+                  }
+
+                  setHistory(historialFinal);
+
                   setSelectedPackage({
                     id: p.tracking_id,
-                    origin: "Costa Rica", // temporal hasta que lo jales de Supabase
-                    destination: "Estados Unidos",
-                    status: p.estado?.toLowerCase(),
-                    statusLabel: p.estado,
+                    origin: "USA",
+                    destination: "Panamá",
+                    status: p.estado,
                     date: p.created_at,
                     weight: p.peso_real ? `${p.peso_real} kg` : "—",
                   });
 
-                  // historial temporal mientras lo conectas a API real
-                  setHistory([
-                    {
-                      status: "Entregado",
-                      location: "Miami, Florida",
-                      date: "2025-11-14",
-                      time: "14:30",
-                      description: "Paquete entregado exitosamente",
-                      icon: CheckCircle2,
-                    },
-                    {
-                      status: "En tránsito",
-                      location: "Centro de distribución Miami",
-                      date: "2025-11-13",
-                      time: "08:15",
-                      description: "Paquete en proceso de entrega",
-                      icon: Truck,
-                    },
-                    {
-                      status: "Procesando",
-                      location: "San José, Costa Rica",
-                      date: "2025-11-07",
-                      time: "10:00",
-                      description: "Paquete recibido en origen",
-                      icon: Clock,
-                    },
-                  ]);
-
                   setShowModal(true);
                 }}
+
                 className="w-full border border-white/30 text-sm font-medium py-2 rounded-xl text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
               >
                 Ver detalles
               </button>
-              
+
             </div>
           ))}
           <PackageDetailModal
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-                packageData={selectedPackage}
-                history={history}
-              />
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+            packageData={selectedPackage}
+            history={history}
+          />
         </div>
-        
+
       ) : (
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <PackageSearch

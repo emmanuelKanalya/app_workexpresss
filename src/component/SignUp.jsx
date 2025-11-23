@@ -147,14 +147,14 @@ export default function SignUp({ onNavigate }) {
         onClose={() => setPopup({ ...popup, show: false })}
       />
 
-      <div className="min-h-screen flex items-center justify-center bg-[#f9fbff] dark:bg-[#0f172a] p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <button
             onClick={handleBack}
             className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition"
           >
             <ArrowLeft className="w-4 h-4" />
-            {step === 1 ? "Volver al inicio" : "Atrás"}
+           
           </button>
 
           <motion.div
@@ -162,11 +162,11 @@ export default function SignUp({ onNavigate }) {
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8"
+            className="bg-white dark:bg-[#040c13] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700"
           >
             {/* Header */}
             <div className="flex flex-col items-center mb-8">
-              <div className="w-16 h-16 bg-linear-to-br from-[#b71f4b] to-[#f2af1e] rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16  bg-linear-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 rounded-full flex items-center justify-center mb-4">
                 <Package className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-gray-900 dark:text-white text-lg font-semibold">
@@ -180,7 +180,7 @@ export default function SignUp({ onNavigate }) {
             {/* Barra progreso */}
             <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full mb-8">
               <div
-                className="h-2 rounded-full bg-linear-to-r from-[#f2af1e] to-[#b71f4b] transition-all duration-300"
+                className="h-2 rounded-full  bg-linear-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600transition-all duration-300"
                 style={{ width: `${(step / 4) * 100}%` }}
               />
             </div>
@@ -214,7 +214,7 @@ export default function SignUp({ onNavigate }) {
                     name="sucursal_preferida"
                     value={form.sucursal_preferida}
                     onChange={handleChange}
-                    className="w-full h-11 mb-4 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-[#f2af1e] outline-none"
+                    className="w-full h-11 mb-4 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 dark:focus:ring-pink-500 outline-none"
                   >
                     <option value="">Seleccionar sucursal</option>
                     {sucursales.map((s) => (
@@ -233,7 +233,7 @@ export default function SignUp({ onNavigate }) {
                         key={p.id_plan}
                         onClick={() => setForm({ ...form, plan: p.descripcion })}
                         className={`border-2 p-4 rounded-lg cursor-pointer transition ${form.plan === p.descripcion
-                          ? "border-[#f2af1e] bg-[#f2af1e]/10"
+                          ? "border-orange-500 bg-orange-500/10 dark:border-pink-500 dark:bg-pink-500/10"
                           : "border-gray-200 dark:border-gray-700"
                           }`}
                       >
@@ -242,7 +242,7 @@ export default function SignUp({ onNavigate }) {
                             {p.descripcion}
                           </span>
                           {form.plan === p.descripcion && (
-                            <div className="flex items-center justify-center bg-[#f2af1e] rounded-full p-1 shadow-md">
+                            <div className="flex items-center justify-center bg-orange-500 dark:bg-pink-500 rounded-full p-1 shadow-md">
                               <Star className="w-4 h-4 text-white fill-white" />
                             </div>
                           )}
@@ -273,7 +273,7 @@ export default function SignUp({ onNavigate }) {
                     disabled={loading || form.password.length < 8}
                     className={`w-full h-12 mt-6 rounded-md font-medium text-white transition ${loading
                       ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-linear-to-r from-[#f2af1e] to-[#b71f4b] hover:opacity-90"
+                      : " bg-linear-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 hover:opacity-90"
                       }`}
                   >
                     {loading ? "Creando..." : "Crear Casillero"}
@@ -301,7 +301,7 @@ function Input({ label, name, type = "text", placeholder, value, onChange }) {
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full h-11 px-3 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-[#f2af1e] outline-none"
+        className="w-full h-11 px-3 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 dark:focus:ring-pink-500 outline-none"
       />
     </div>
   );
@@ -315,7 +315,7 @@ function Next({ onClick, disabled }) {
       disabled={disabled}
       className={`w-full h-12 mt-6 font-medium rounded-md text-white transition ${disabled
         ? "bg-gray-400 cursor-not-allowed"
-        : "bg-linear-to-r from-[#f2af1e] to-[#b71f4b] hover:opacity-90"
+        : " bg-linear-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 hover:opacity-90"
         }`}
     >
       Siguiente <ArrowRight className="inline-block w-4 h-4 ml-2" />
