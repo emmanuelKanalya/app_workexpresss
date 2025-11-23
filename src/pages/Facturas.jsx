@@ -31,29 +31,29 @@ export default function Facturas({ cliente }) {
   });
 
   // Detectar retorno de Tilopay
+// 🚀 Detectar retorno de Tilopay (solo UI, el webhook hace el proceso real)
 useEffect(() => {
   const params = new URLSearchParams(window.location.search);
-
-  const code = params.get("code");   // Tilopay payment status
-  const order = params.get("order"); // Número de factura(s)
-  const tpt = params.get("tilopay-transaction");
+  const code = params.get("code");   
 
   if (code === "1") {
-    // Pago aprobado
-    procesarPagoCompleto(order);
+    // El webhook ya actualizó en backend
     setPopupTilopay({
       show: true,
       type: "success",
-      message: "Pago realizado con éxito. Tus facturas han sido procesadas."
+      message: "Pago realizado con éxito. Actualizando tus facturas..."
     });
 
+    // 🔄 Refrescar facturas desde Supabase
+    refrescarFacturas();
+
+    // Limpiar URL
     setTimeout(() => {
       window.history.replaceState({}, document.title, "/facturas");
-    }, 100);
+    }, 200);
   }
 
   if (code === "0") {
-    // Pago fallido / cancelado
     setPopupTilopay({
       show: true,
       type: "cancel",
@@ -62,63 +62,26 @@ useEffect(() => {
 
     setTimeout(() => {
       window.history.replaceState({}, document.title, "/facturas");
-    }, 100);
+    }, 200);
   }
 }, []);
 
-async function procesarPagoCompleto(order) {
+// 🔄 Función para refrescar facturas directamente desde BD
+async function refrescarFacturas() {
   try {
-    if (!order) return;
+    const { data } = await supabase
+      .from("tb_factura")
+      .select("*")
+      .eq("id_cliente", cliente?.id_cliente)
+      .order("created_at", { ascending: false });
 
-    // Puede venir solo uno o varios separados por coma
-    const codigos = order.includes(",")
-      ? order.split(",")
-      : [order];
-
-    for (const codigo of codigos) {
-      const { data: factura, error: getErr } = await supabase
-        .from("tb_factura")
-        .select("*")
-        .eq("numero", codigo.trim())
-        .single();
-
-      if (getErr || !factura) continue;
-
-      const total = factura.total_restante > 0
-        ? factura.total_restante
-        : factura.total;
-
-      // 1️⃣ marcar factura como pagada
-      await supabase
-        .from("tb_factura")
-        .update({
-          estado: "pagado",
-          total_pagado: total,
-          total_restante: 0
-        })
-        .eq("id_factura", factura.id_factura);
-
-      // 2️⃣ registrar pago en tb_pago_factura
-      await supabase
-        .from("tb_pago_factura")
-        .insert([
-          {
-            id_factura: factura.id_factura,
-            id_cliente: factura.id_cliente,
-            monto: total,
-            id_metodo_pago: "a9600036-34e9-4ab0-883a-fad419195875",
-            observacion: `Pago completo via Tilopay (${codigo})`,
-            fecha_pago: new Date().toISOString(),
-            referencia: order
-          }
-        ]);
-    }
-
-    console.log("🔥 Facturas procesadas correctamente");
+    setFacturas(data || []);
   } catch (err) {
-    console.error("❌ Error procesando pago:", err);
+    console.error("❌ Error refrescando facturas:", err);
   }
 }
+
+
 
 
   // 🔹 Mostrar / ocultar BottomNav según modales
